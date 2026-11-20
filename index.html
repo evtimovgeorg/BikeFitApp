@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FF6B00" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="BikeFit Pro - Calcola la tua posizione in sella ideale" />
+  <title>BikeFit Pro</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --orange:    #FF6B00;
+      --orange-lt: #FF8C33;
+      --orange-dk: #CC5500;
+      --green:     #00C853;
+      --green-lt:  #69F0AE;
+      --red:       #FF3D3D;
+      --blue:      #2979FF;
+      --bg:        #0F0F14;
+      --bg2:       #1A1A24;
+      --bg3:       #242432;
+      --bg4:       #2E2E40;
+      --text:      #F0F0F8;
+      --text2:     #A0A0B8;
+      --text3:     #606078;
+      --border:    rgba(255,255,255,0.08);
+      --radius:    14px;
+      --radius-sm: 8px;
+      --shadow:    0 4px 24px rgba(0,0,0,0.4);
+      --font-h:    'Space Grotesk', sans-serif;
+      --font-b:    'DM Sans', sans-serif;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 16px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    /* ===== LAYOUT ===== */
+    #app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* ===== HEADER ===== */
+    .app-header {
+      background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .app-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .app-logo svg { width: 32px; height: 32px; }
+    .app-title {
+      font-family: var(--font-h);
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--orange), var(--orange-lt));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .lang-toggle {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      color: var(--text2);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-toggle:hover { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+    /* ===== TABS ===== */
+    .tab-bar {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 61px;
+      z-index: 99;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px 4px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-family: var(--font-b);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .tab-btn svg { width: 20px; height: 20px; }
+    .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+    .tab-btn:hover:not(.active) { color: var(--text2); }
+
+    /* ===== PAGES ===== */
+    .page { display: none; flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 30px; }
+    .page.active { display: block; }
+
+    /* ===== SECTION TITLE ===== */
+    .section-title {
+      font-family: var(--font-h);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 18px;
+      background: var(--orange);
+      border-radius: 2px;
+    }
+
+    /* ===== BIKE TYPE SELECTOR ===== */
+    .bike-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .bike-card {
+      background: var(--bg2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .bike-card:hover { border-color: var(--orange-lt); background: var(--bg3); }
+    .bike-card.selected { border-color: var(--orange); background: rgba(255,107,0,0.1); }
+    .bike-card svg { width: 40px; height: 40px; }
+    .bike-card-name {
+      font-family: var(--font-h);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .bike-card-sub {
+      font-size: 0.68rem;
+      color: var(--text3);
+    }
+
+    /* ===== FORM ===== */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text2);
+    }
+    .form-label span.unit {
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-weight: 400;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 1rem;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .form-input:focus { outline: none; border-color: var(--orange); }
+    .form-input::placeholder { color: var(--text3); }
+    .form-input.error { border-color: var(--red); }
+
+    /* ===== SLIDER ===== */
+    .slider-wrap { position: relative; }
+    .form-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg4);
+      outline: none;
+      cursor: pointer;
+    }
+    .form-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--orange);
+      cursor: pointer;
+      box-shadow: 0 0 0 3px rgba(255,107,0,0.25);
+    }
+    .slider-val {
+      position: absolute;
+      right: 0; top: -24px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--orange);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font-h);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--orange), var(--orange-lt));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(255,107,0,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,107,0,0.45); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      background: var(--bg3);
+      border: 1.5px solid var(--border);
+      color: var(--text2);
+    }
+    .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+
+    /* ===== RESULTS ===== */
+    .result-hero {
+      background: linear-gradient(135deg, rgba(255,107,0,0.15), rgba(255,107,0,0.05));
+      border: 1px solid rgba(255,107,0,0.3);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .result-hero-label {
+      font-size: 0.8rem;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    .result-hero-value {
+      font-family: var(--font-h);
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--orange);
+      line-height: 1;
+    }
+    .result-hero-sub {
+      font-size: 0.85rem;
+      color: var(--text2);
+      margin-top: 6px;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .result-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .result-card-label {
+      font-size: 0.72rem;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .result-card-value {
+      font-family: var(--font-h);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .result-card-unit {
+      font-size: 0.75rem;
+      color: var(--text3);
+      font-weight: 400;
+    }
+    .result-card.highlight { border-color: rgba(255,107,0,0.4); background: rgba(255,107,0,0.07); }
+    .result-card.highlight .result-card-value { color: var(--orange); }
+
+    /* ===== STATUS BADGE ===== */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .status-ok { background: rgba(0,200,83,0.15); color: var(--green); border: 1px solid rgba(0,200,83,0.3); }
+    .status-warn { background: rgba(255,193,7,0.15); color: #FFC107; border: 1px solid rgba(255,193,7,0.3); }
+    .status-bad { background: rgba(255,61,61,0.15); color: var(--red); border: 1px solid rgba(255,61,61,0.3); }
+
+    /* ===== TIPS ===== */
+    .tip-card {
+      background: var(--bg2);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+    .tip-card strong { color: var(--text); }
+
+    /* ===== FRAME CHECK ===== */
+    .frame-check-result {
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .frame-check-result.ok { background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.3); }
+    .frame-check-result.warn { background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); }
+    .frame-check-result.bad { background: rgba(255,61,61,0.1); border: 1px solid rgba(255,61,61,0.3); }
+    .frame-check-icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .frame-check-title {
+      font-family: var(--font-h);
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .frame-check-result.ok .frame-check-title { color: var(--green); }
+    .frame-check-result.warn .frame-check-title { color: #FFC107; }
+    .frame-check-result.bad .frame-check-title { color: var(--red); }
+
+    /* ===== INFO PAGE ===== */
+    .info-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .info-card-title {
+      font-family: var(--font-h);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--orange);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-card p { font-size: 0.85rem; color: var(--text2); line-height: 1.6; margin-bottom: 6px; }
+    .info-card p:last-child { margin-bottom: 0; }
+
+    /* ===== DIAGRAM ===== */
+    .diagram-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .diagram-wrap svg { max-width: 100%; height: auto; }
+
+    /* ===== DIVIDER ===== */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text3);
+    }
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.4; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      color: var(--text);
+      z-index: 999;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+    /* ===== RANGE INDICATOR ===== */
+    .range-bar-wrap { margin-top: 8px; }
+    .range-bar-track {
+      height: 8px;
+      background: var(--bg4);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+    .range-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    .range-bar-fill.ok { background: linear-gradient(90deg, var(--green), var(--green-lt)); }
+    .range-bar-fill.warn { background: linear-gradient(90deg, #FFC107, #FFD54F); }
+    .range-bar-fill.bad { background: linear-gradient(90deg, var(--red), #FF8A80); }
+    .range-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: var(--text3);
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="app-logo">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="8" cy="22" r="6" stroke="#FF6B00" stroke-width="2.5"/>
+        <circle cx="24" cy="22" r="6" stroke="#FF6B00" stroke-width="2.5"/>
+        <path d="M8 22 L14 10 L20 14 L24 22" stroke="#FF8C33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14 10 L18 10" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="14" cy="10" r="1.5" fill="#FF6B00"/>
+      </svg>
+      <span class="app-title">BikeFit Pro</span>
+    </div>
+    <button class="lang-toggle" onclick="toggleLang()" id="langBtn">🇬🇧 EN</button>
+  </header>
+
+  <!-- TAB BAR -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="showPage('measure')" id="tab-measure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
+      <span data-it="Misure" data-en="Measures">Misure</span>
+    </button>
+    <button class="tab-btn" onclick="showPage('result')" id="tab-result">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span data-it="Posizione" data-en="Position">Posizione</span>
+    </button>
+    <button class="tab-btn" onclick="showPage('frame')" id="tab-frame">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span data-it="Telaio" data-en="Frame">Telaio</span>
+    </button>
+    <button class="tab-btn" onclick="showPage('info')" id="tab-info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span data-it="Guida" data-en="Guide">Guida</span>
+    </button>
+  </nav>
+
+  <!-- ===== PAGE: MISURE ===== -->
+  <div class="page active" id="page-measure">
+
+    <p class="section-title" data-it="Tipo di Bicicletta" data-en="Bike Type">Tipo di Bicicletta</p>
+    <div class="bike-grid">
+      <div class="bike-card selected" onclick="selectBike('road')" id="bike-road">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <circle cx="38" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <path d="M10 34 L20 14 L28 20 L38 34" stroke="#FF8C33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 14 L26 14" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <path d="M26 14 L30 20" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div class="bike-card-name" data-it="Corsa" data-en="Road">Corsa</div>
+        <div class="bike-card-sub">Road Bike</div>
+      </div>
+      <div class="bike-card" onclick="selectBike('mtb')" id="bike-mtb">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <circle cx="38" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <path d="M10 34 L18 18 L26 22 L38 34" stroke="#FF8C33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18 18 L24 16" stroke="#FF6B00" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M24 16 L28 20" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <rect x="22" y="14" width="6" height="4" rx="1" stroke="#FF6B00" stroke-width="1.5"/>
+        </svg>
+        <div class="bike-card-name">MTB</div>
+        <div class="bike-card-sub">Mountain Bike</div>
+      </div>
+      <div class="bike-card" onclick="selectBike('city')" id="bike-city">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <circle cx="38" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <path d="M10 34 L16 20 L24 24 L38 34" stroke="#FF8C33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 20 L22 18" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <path d="M22 18 L26 22" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <path d="M22 18 L22 14" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <path d="M20 14 L24 14" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div class="bike-card-name" data-it="Città" data-en="City">Città</div>
+        <div class="bike-card-sub">City / Trekking</div>
+      </div>
+      <div class="bike-card" onclick="selectBike('gravel')" id="bike-gravel">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <circle cx="38" cy="34" r="8" stroke="#FF6B00" stroke-width="2.5"/>
+          <path d="M10 34 L19 16 L27 21 L38 34" stroke="#FF8C33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 16 L25 15" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <path d="M25 15 L29 20" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+          <path d="M25 15 L25 11" stroke="#FF6B00" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <div class="bike-card-name">Gravel</div>
+        <div class="bike-card-sub">Gravel / Adventure</div>
+      </div>
+    </div>
+
+    <p class="section-title" data-it="Le Tue Misure" data-en="Your Measurements">Le Tue Misure</p>
+
+    <!-- Altezza -->
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Altezza Totale" data-en="Total Height">Altezza Totale</span>
+        <span class="unit">cm</span>
+      </div>
+      <div class="slider-wrap">
+        <span class="slider-val" id="val-height">175</span>
+        <input type="range" class="form-slider" id="sl-height" min="140" max="210" value="175" step="1" oninput="updateSlider('height')">
+      </div>
+    </div>
+
+    <!-- Cavallo -->
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Lunghezza Cavallo (Inseam)" data-en="Inseam Length">Lunghezza Cavallo (Inseam)</span>
+        <span class="unit">cm</span>
+      </div>
+      <div class="slider-wrap">
+        <span class="slider-val" id="val-inseam">82</span>
+        <input type="range" class="form-slider" id="sl-inseam" min="60" max="110" value="82" step="1" oninput="updateSlider('inseam')">
+      </div>
+    </div>
+
+    <!-- Busto -->
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Lunghezza Busto" data-en="Torso Length">Lunghezza Busto</span>
+        <span class="unit">cm</span>
+      </div>
+      <div class="slider-wrap">
+        <span class="slider-val" id="val-torso">58</span>
+        <input type="range" class="form-slider" id="sl-torso" min="40" max="80" value="58" step="1" oninput="updateSlider('torso')">
+      </div>
+    </div>
+
+    <!-- Braccia -->
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Lunghezza Braccia" data-en="Arm Length">Lunghezza Braccia</span>
+        <span class="unit">cm</span>
+      </div>
+      <div class="slider-wrap">
+        <span class="slider-val" id="val-arm">60</span>
+        <input type="range" class="form-slider" id="sl-arm" min="40" max="90" value="60" step="1" oninput="updateSlider('arm')">
+      </div>
+    </div>
+
+    <!-- Femore -->
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Lunghezza Femore" data-en="Femur Length">Lunghezza Femore</span>
+        <span class="unit">cm</span>
+      </div>
+      <div class="slider-wrap">
+        <span class="slider-val" id="val-femur">42</span>
+        <input type="range" class="form-slider" id="sl-femur" min="30" max="60" value="42" step="1" oninput="updateSlider('femur')">
+      </div>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <button class="btn btn-primary" onclick="calculate()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span data-it="Calcola Posizione" data-en="Calculate Position">Calcola Posizione</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: RISULTATI ===== -->
+  <div class="page" id="page-result">
+    <div id="result-empty" class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <p data-it="Inserisci le tue misure e premi 'Calcola Posizione' per vedere i risultati." data-en="Enter your measurements and press 'Calculate Position' to see results.">Inserisci le tue misure e premi 'Calcola Posizione' per vedere i risultati.</p>
+    </div>
+    <div id="result-content" style="display:none;" class="fade-in">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+  <!-- ===== PAGE: TELAIO ===== -->
+  <div class="page" id="page-frame">
+    <p class="section-title" data-it="Verifica Telaio" data-en="Frame Check">Verifica Telaio</p>
+
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Taglia Telaio (Stack)" data-en="Frame Size (Stack)">Stack</span>
+        <span class="unit">mm</span>
+      </div>
+      <input type="number" class="form-input" id="inp-stack" placeholder="es. 540" min="400" max="700" />
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Reach" data-en="Reach">Reach</span>
+        <span class="unit">mm</span>
+      </div>
+      <input type="number" class="form-input" id="inp-reach" placeholder="es. 380" min="300" max="550" />
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Lunghezza Tubo Sella (ETT)" data-en="Effective Top Tube (ETT)">Tubo Sella Eff. (ETT)</span>
+        <span class="unit">mm</span>
+      </div>
+      <input type="number" class="form-input" id="inp-ett" placeholder="es. 540" min="400" max="650" />
+    </div>
+
+    <div class="form-group">
+      <div class="form-label">
+        <span data-it="Altezza Tubo Sella (STA)" data-en="Seat Tube Length (STA)">Tubo Sella (STA)</span>
+        <span class="unit">mm</span>
+      </div>
+      <input type="number" class="form-input" id="inp-sta" placeholder="es. 500" min="350" max="650" />
+    </div>
+
+    <div style="margin-top: 8px; margin-bottom: 20px;">
+      <button class="btn btn-primary" onclick="checkFrame()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span data-it="Verifica Compatibilità" data-en="Check Compatibility">Verifica Compatibilità</span>
+      </button>
+    </div>
+
+    <div id="frame-result" style="display:none;" class="fade-in">
+      <!-- Filled by JS -->
+    </div>
+
+    <div class="divider"></div>
+    <p class="section-title" data-it="Taglie Consigliate" data-en="Recommended Sizes">Taglie Consigliate</p>
+    <div id="size-chart">
+      <div class="empty-state" style="padding: 20px;">
+        <p data-it="Calcola prima la posizione per vedere le taglie consigliate." data-en="Calculate position first to see recommended sizes.">Calcola prima la posizione per vedere le taglie consigliate.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: GUIDA ===== -->
+  <div class="page" id="page-info">
+    <p class="section-title" data-it="Come Misurare" data-en="How to Measure">Come Misurare</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- Body silhouette -->
+        <circle cx="150" cy="30" r="18" fill="none" stroke="#FF6B00" stroke-width="2"/>
+        <!-- Torso -->
+        <line x1="150" y1="48" x2="150" y2="130" stroke="#FF8C33" stroke-width="2.5"/>
+        <!-- Arms -->
+        <line x1="150" y1="70" x2="110" y2="110" stroke="#FF8C33" stroke-width="2"/>
+        <line x1="150" y1="70" x2="190" y2="110" stroke="#FF8C33" stroke-width="2"/>
+        <!-- Legs -->
+        <line x1="150" y1="130" x2="130" y2="200" stroke="#FF8C33" stroke-width="2.5"/>
+        <line x1="150" y1="130" x2="170" y2="200" stroke="#FF8C33" stroke-width="2.5"/>
+        <!-- Feet -->
+        <line x1="130" y1="200" x2="120" y2="220" stroke="#FF8C33" stroke-width="2"/>
+        <line x1="170" y1="200" x2="180" y2="220" stroke="#FF8C33" stroke-width="2"/>
+
+        <!-- Measurement lines -->
+        <!-- Height -->
+        <line x1="60" y1="12" x2="60" y2="220" stroke="#FF6B00" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="55" y1="12" x2="65" y2="12" stroke="#FF6B00" stroke-width="1.5"/>
+        <line x1="55" y1="220" x2="65" y2="220" stroke="#FF6B00" stroke-width="1.5"/>
+        <text x="30" y="120" fill="#FF6B00" font-size="9" font-family="DM Sans" text-anchor="middle" transform="rotate(-90,30,120)">ALTEZZA</text>
+
+        <!-- Inseam -->
+        <line x1="240" y1="130" x2="240" y2="220" stroke="#00C853" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="235" y1="130" x2="245" y2="130" stroke="#00C853" stroke-width="1.5"/>
+        <line x1="235" y1="220" x2="245" y2="220" stroke="#00C853" stroke-width="1.5"/>
+        <text x="265" y="180" fill="#00C853" font-size="9" font-family="DM Sans" text-anchor="middle" transform="rotate(90,265,180)">CAVALLO</text>
+
+        <!-- Torso label -->
+        <line x1="200" y1="48" x2="200" y2="130" stroke="#2979FF" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="195" y1="48" x2="205" y2="48" stroke="#2979FF" stroke-width="1.5"/>
+        <line x1="195" y1="130" x2="205" y2="130" stroke="#2979FF" stroke-width="1.5"/>
+        <text x="220" y="95" fill="#2979FF" font-size="9" font-family="DM Sans" text-anchor="middle" transform="rotate(90,220,95)">BUSTO</text>
+
+        <!-- Arm label -->
+        <text x="85" y="95" fill="#FFC107" font-size="9" font-family="DM Sans">BRACCIO</text>
+        <line x1="110" y1="70" x2="110" y2="110" stroke="#FFC107" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <!-- Floor line -->
+        <line x1="40" y1="220" x2="260" y2="220" stroke="#606078" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📏 <span data-it="Altezza Totale" data-en="Total Height">Altezza Totale</span></div>
+      <p data-it="Misurati senza scarpe, in piedi contro un muro. Usa un libro piatto sulla testa per segnare il punto." data-en="Measure without shoes, standing against a wall. Use a flat book on your head to mark the point.">Misurati senza scarpe, in piedi contro un muro. Usa un libro piatto sulla testa per segnare il punto.</p>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📐 <span data-it="Lunghezza Cavallo (Inseam)" data-en="Inseam Length">Lunghezza Cavallo (Inseam)</span></div>
+      <p data-it="Mettiti in piedi con i piedi a 15-20 cm di distanza. Posiziona un libro tra le gambe (come una sella) e misura dal pavimento alla parte superiore del libro." data-en="Stand with feet 15-20 cm apart. Place a book between your legs (like a saddle) and measure from the floor to the top of the book.">Mettiti in piedi con i piedi a 15-20 cm di distanza. Posiziona un libro tra le gambe (come una sella) e misura dal pavimento alla parte superiore del libro.</p>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📏 <span data-it="Lunghezza Busto" data-en="Torso Length">Lunghezza Busto</span></div>
+      <p data-it="Misura dalla spalla (acromion) fino all'osso del bacino (cresta iliaca). Tieni la schiena dritta." data-en="Measure from the shoulder (acromion) to the hip bone (iliac crest). Keep your back straight.">Misura dalla spalla (acromion) fino all'osso del bacino (cresta iliaca). Tieni la schiena dritta.</p>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">💪 <span data-it="Lunghezza Braccia" data-en="Arm Length">Lunghezza Braccia</span></div>
+      <p data-it="Misura dalla spalla (acromion) fino al polso, con il braccio disteso lungo il fianco." data-en="Measure from the shoulder (acromion) to the wrist, with the arm extended along the side.">Misura dalla spalla (acromion) fino al polso, con il braccio disteso lungo il fianco.</p>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">🦵 <span data-it="Lunghezza Femore" data-en="Femur Length">Lunghezza Femore</span></div>
+      <p data-it="Siediti su una sedia con la coscia orizzontale. Misura dal ginocchio (rotula) fino all'anca (trocantere maggiore)." data-en="Sit on a chair with your thigh horizontal. Measure from the knee (patella) to the hip (greater trochanter).">Siediti su una sedia con la coscia orizzontale. Misura dal ginocchio (rotula) fino all'anca (trocantere maggiore).</p>
+    </div>
+
+    <div class="divider"></div>
+    <p class="section-title" data-it="Glossario Telaio" data-en="Frame Glossary">Glossario Telaio</p>
+
+    <div class="info-card">
+      <div class="info-card-title">📊 Stack & Reach</div>
+      <p data-it="<strong>Stack</strong>: distanza verticale dal centro del movimento centrale al centro del tubo sterzo. Determina l'altezza della posizione." data-en="<strong>Stack</strong>: vertical distance from the bottom bracket center to the head tube center. Determines riding height."><strong>Stack</strong>: distanza verticale dal centro del movimento centrale al centro del tubo sterzo.</p>
+      <p data-it="<strong>Reach</strong>: distanza orizzontale dal centro del movimento centrale al centro del tubo sterzo. Determina la lunghezza della posizione." data-en="<strong>Reach</strong>: horizontal distance from the bottom bracket center to the head tube center. Determines riding length."><strong>Reach</strong>: distanza orizzontale dal centro del movimento centrale al centro del tubo sterzo.</p>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">📏 ETT (Effective Top Tube)</div>
+      <p data-it="Lunghezza orizzontale del tubo superiore, misurata in modo effettivo. Indica la lunghezza del telaio." data-en="Horizontal length of the top tube, measured effectively. Indicates the frame length.">Lunghezza orizzontale del tubo superiore, misurata in modo effettivo. Indica la lunghezza del telaio.</p>
+    </div>
+
+    <div class="divider"></div>
+    <div style="text-align:center; padding: 10px 0 20px;">
+      <p style="font-size:0.75rem; color: var(--text3);">BikeFit Pro v1.0 · Algoritmi basati su metodologie LeMond, Hamley e KOPS</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let currentLang = 'it';
+let currentBike = 'road';
+let lastResult = null;
+
+// ===== LANGUAGE =====
+function toggleLang() {
+  currentLang = currentLang === 'it' ? 'en' : 'it';
+  document.getElementById('langBtn').textContent = currentLang === 'it' ? '🇬🇧 EN' : '🇮🇹 IT';
+  document.querySelectorAll('[data-it]').forEach(el => {
+    const txt = el.getAttribute('data-' + currentLang);
+    if (txt) el.innerHTML = txt;
+  });
+  if (lastResult) renderResult(lastResult);
+}
+
+// ===== TABS =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ===== BIKE SELECT =====
+function selectBike(type) {
+  currentBike = type;
+  document.querySelectorAll('.bike-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('bike-' + type).classList.add('selected');
+}
+
+// ===== SLIDERS =====
+function updateSlider(key) {
+  const sl = document.getElementById('sl-' + key);
+  const val = document.getElementById('val-' + key);
+  val.textContent = sl.value;
+  // Update gradient
+  const pct = ((sl.value - sl.min) / (sl.max - sl.min)) * 100;
+  sl.style.background = `linear-gradient(to right, #FF6B00 ${pct}%, #2E2E40 ${pct}%)`;
+}
+
+// Init sliders
+['height','inseam','torso','arm','femur'].forEach(k => updateSlider(k));
+
+// ===== ALGORITHMS =====
+function calcRoad(m) {
+  // LeMond method: saddle height = inseam * 0.883
+  const saddleH = Math.round(m.inseam * 0.883);
+  // Saddle setback: femur * 0.5 behind BB
+  const saddleSetback = Math.round(m.femur * 0.5);
+  // Handlebar drop: based on torso/arm ratio
+  const reachIndex = (m.torso + m.arm) / m.height;
+  let hbDrop = Math.round((m.inseam * 0.883 - m.inseam * 0.883 * 0.97));
+  if (reachIndex > 0.72) hbDrop += 10;
+  // Frame size (ETT): torso + arm * 0.6
+  const ettIdeal = Math.round((m.torso * 0.9 + m.arm * 0.6) * 10);
+  // Stack ideal
+  const stackIdeal = Math.round(saddleH * 0.67 * 10);
+  // Reach ideal
+  const reachIdeal = Math.round((m.torso * 0.45 + m.arm * 0.35) * 10);
+  // Frame label
+  const frameLabel = getFrameLabel('road', m.inseam);
+  return { saddleH, saddleSetback, hbDrop, ettIdeal, stackIdeal, reachIdeal, frameLabel };
+}
+
+function calcMTB(m) {
+  // MTB: inseam * 0.66 for saddle height (more conservative)
+  const saddleH = Math.round(m.inseam * 0.66 * 1.33); // ~0.878
+  const saddleSetback = Math.round(m.femur * 0.45);
+  const hbDrop = Math.max(0, Math.round((m.inseam * 0.878 - m.inseam * 0.878 * 0.985)));
+  const ettIdeal = Math.round((m.torso * 0.85 + m.arm * 0.55) * 10);
+  const stackIdeal = Math.round(saddleH * 0.68 * 10);
+  const reachIdeal = Math.round((m.torso * 0.42 + m.arm * 0.32) * 10);
+  const frameLabel = getFrameLabel('mtb', m.inseam);
+  return { saddleH, saddleSetback, hbDrop, ettIdeal, stackIdeal, reachIdeal, frameLabel };
+}
+
+function calcCity(m) {
+  // City: more upright, higher bars
+  const saddleH = Math.round(m.inseam * 0.870);
+  const saddleSetback = Math.round(m.femur * 0.4);
+  const hbDrop = -Math.round(m.inseam * 0.02); // bars ABOVE saddle
+  const ettIdeal = Math.round((m.torso * 0.88 + m.arm * 0.5) * 10);
+  const stackIdeal = Math.round(saddleH * 0.72 * 10);
+  const reachIdeal = Math.round((m.torso * 0.40 + m.arm * 0.30) * 10);
+  const frameLabel = getFrameLabel('city', m.inseam);
+  return { saddleH, saddleSetback, hbDrop, ettIdeal, stackIdeal, reachIdeal, frameLabel };
+}
+
+function calcGravel(m) {
+  // Gravel: between road and MTB
+  const saddleH = Math.round(m.inseam * 0.880);
+  const saddleSetback = Math.round(m.femur * 0.48);
+  const hbDrop = Math.round((m.inseam * 0.880 - m.inseam * 0.880 * 0.975));
+  const ettIdeal = Math.round((m.torso * 0.88 + m.arm * 0.58) * 10);
+  const stackIdeal = Math.round(saddleH * 0.685 * 10);
+  const reachIdeal = Math.round((m.torso * 0.44 + m.arm * 0.33) * 10);
+  const frameLabel = getFrameLabel('gravel', m.inseam);
+  return { saddleH, saddleSetback, hbDrop, ettIdeal, stackIdeal, reachIdeal, frameLabel };
+}
+
+function getFrameLabel(type, inseam) {
+  const sizes = {
+    road:   [{max:75,s:'XXS (44)'},{max:79,s:'XS (47)'},{max:83,s:'S (50)'},{max:87,s:'M (53)'},{max:91,s:'L (56)'},{max:96,s:'XL (58)'},{max:999,s:'XXL (61)'}],
+    mtb:    [{max:72,s:'XS (13")'},{max:77,s:'S (15")'},{max:82,s:'M (17")'},{max:88,s:'L (19")'},{max:94,s:'XL (21")'},{max:999,s:'XXL (23")'}],
+    city:   [{max:74,s:'XS (44)'},{max:79,s:'S (47)'},{max:84,s:'M (50)'},{max:89,s:'L (54)'},{max:94,s:'XL (58)'},{max:999,s:'XXL (62)'}],
+    gravel: [{max:76,s:'XS (46)'},{max:80,s:'S (49)'},{max:84,s:'M (52)'},{max:88,s:'L (55)'},{max:93,s:'XL (58)'},{max:999,s:'XXL (61)'}]
+  };
+  const chart = sizes[type] || sizes.road;
+  for (const row of chart) { if (inseam <= row.max) return row.s; }
+  return chart[chart.length-1].s;
+}
+
+// ===== CALCULATE =====
+function calculate() {
+  const m = {
+    height: +document.getElementById('sl-height').value,
+    inseam: +document.getElementById('sl-inseam').value,
+    torso:  +document.getElementById('sl-torso').value,
+    arm:    +document.getElementById('sl-arm').value,
+    femur:  +document.getElementById('sl-femur').value
+  };
+
+  // Validation
+  if (m.inseam > m.height * 0.6) { showToast(currentLang==='it'?'⚠️ Cavallo troppo lungo rispetto all\'altezza':'⚠️ Inseam too long relative to height'); return; }
+  if (m.inseam < m.height * 0.4) { showToast(currentLang==='it'?'⚠️ Cavallo troppo corto rispetto all\'altezza':'⚠️ Inseam too short relative to height'); return; }
+
+  let res;
+  if (currentBike === 'road')   res = calcRoad(m);
+  if (currentBike === 'mtb')    res = calcMTB(m);
+  if (currentBike === 'city')   res = calcCity(m);
+  if (currentBike === 'gravel') res = calcGravel(m);
+
+  res.measurements = m;
+  res.bikeType = currentBike;
+  lastResult = res;
+
+  renderResult(res);
+  updateSizeChart(res);
+  showPage('result');
+  showToast(currentLang==='it'?'✅ Calcolo completato!':'✅ Calculation complete!');
+}
+
+// ===== RENDER RESULT =====
+function renderResult(res) {
+  const it = currentLang === 'it';
+  const bikeNames = { road: it?'Bici da Corsa':'Road Bike', mtb:'MTB', city: it?'Bici da Città':'City Bike', gravel:'Gravel' };
+  const bikeName = bikeNames[res.bikeType] || res.bikeType;
+
+  const hbLabel = res.hbDrop < 0
+    ? (it ? `Manubrio ${Math.abs(res.hbDrop)} mm SOPRA la sella` : `Handlebar ${Math.abs(res.hbDrop)} mm ABOVE saddle`)
+    : (it ? `Drop manubrio: ${res.hbDrop} mm sotto la sella` : `Handlebar drop: ${res.hbDrop} mm below saddle`);
+
+  const tips = getTips(res, it);
+
+  document.getElementById('result-empty').style.display = 'none';
+  document.getElementById('result-content').style.display = 'block';
+  document.getElementById('result-content').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <p class="section-title" style="margin-bottom:0;">${it?'Posizione Consigliata':'Recommended Position'}</p>
+      <span class="status-badge status-ok">✓ ${bikeName}</span>
+    </div>
+
+    <div class="result-hero">
+      <div class="result-hero-label">${it?'TAGLIA TELAIO CONSIGLIATA':'RECOMMENDED FRAME SIZE'}</div>
+      <div class="result-hero-value">${res.frameLabel}</div>
+      <div class="result-hero-sub">${it?'Basato su cavallo':'Based on inseam'} ${res.measurements.inseam} cm</div>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-card highlight">
+        <div class="result-card-label">${it?'ALTEZZA SELLA':'SADDLE HEIGHT'}</div>
+        <div class="result-card-value">${res.saddleH} <span class="result-card-unit">mm</span></div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">${it?'ARRETRAMENTO SELLA':'SADDLE SETBACK'}</div>
+        <div class="result-card-value">${res.saddleSetback} <span class="result-card-unit">mm</span></div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">${it?'STACK IDEALE':'IDEAL STACK'}</div>
+        <div class="result-card-value">${res.stackIdeal} <span class="result-card-unit">mm</span></div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">${it?'REACH IDEALE':'IDEAL REACH'}</div>
+        <div class="result-card-value">${res.reachIdeal} <span class="result-card-unit">mm</span></div>
+      </div>
+      <div class="result-card" style="grid-column:1/-1;">
+        <div class="result-card-label">${it?'MANUBRIO':'HANDLEBAR'}</div>
+        <div class="result-card-value" style="font-size:1rem;">${hbLabel}</div>
+      </div>
+    </div>
+
+    <p class="section-title">${it?'Proporzioni Corporee':'Body Proportions'}</p>
+    ${renderProportions(res.measurements, it)}
+
+    <p class="section-title" style="margin-top:20px;">${it?'Consigli':'Tips'}</p>
+    ${tips.map(t => `<div class="tip-card">${t}</div>`).join('')}
+
+    <div style="margin-top:20px;">
+      <button class="btn btn-secondary" onclick="showPage('frame')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        ${it?'Verifica il tuo telaio →':'Check your frame →'}
+      </button>
+    </div>
+  `;
+}
+
+function renderProportions(m, it) {
+  const ratio = (m.inseam / m.height * 100).toFixed(1);
+  const ratioNum = parseFloat(ratio);
+  let ratioStatus = 'ok', ratioLabel = it?'Normale':'Normal';
+  if (ratioNum < 46) { ratioStatus = 'warn'; ratioLabel = it?'Gambe corte':'Short legs'; }
+  if (ratioNum > 52) { ratioStatus = 'warn'; ratioLabel = it?'Gambe lunghe':'Long legs'; }
+
+  const reachIdx = ((m.torso + m.arm) / m.height * 100).toFixed(1);
+  const reachNum = parseFloat(reachIdx);
+  let reachStatus = 'ok', reachLabel = it?'Normale':'Normal';
+  if (reachNum < 68) { reachStatus = 'warn'; reachLabel = it?'Busto+braccia corti':'Short torso+arms'; }
+  if (reachNum > 76) { reachStatus = 'warn'; reachLabel = it?'Busto+braccia lunghi':'Long torso+arms'; }
+
+  const pct1 = Math.min(100, Math.max(0, (ratioNum - 42) / (56 - 42) * 100));
+  const pct2 = Math.min(100, Math.max(0, (reachNum - 62) / (82 - 62) * 100));
+
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:0.82rem;color:var(--text2);">${it?'Rapporto Cavallo/Altezza':'Inseam/Height Ratio'}</span>
+        <span class="status-badge status-${ratioStatus}">${ratio}% · ${ratioLabel}</span>
+      </div>
+      <div class="range-bar-wrap">
+        <div class="range-bar-track"><div class="range-bar-fill ${ratioStatus}" style="width:${pct1}%"></div></div>
+        <div class="range-bar-labels"><span>42%</span><span>${it?'Ideale 46-52%':'Ideal 46-52%'}</span><span>56%</span></div>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:0.82rem;color:var(--text2);">${it?'Indice Reach (Busto+Braccia/Altezza)':'Reach Index (Torso+Arms/Height)'}</span>
+        <span class="status-badge status-${reachStatus}">${reachIdx}% · ${reachLabel}</span>
+      </div>
+      <div class="range-bar-wrap">
+        <div class="range-bar-track"><div class="range-bar-fill ${reachStatus}" style="width:${pct2}%"></div></div>
+        <div class="range-bar-labels"><span>62%</span><span>${it?'Ideale 68-76%':'Ideal 68-76%'}</span><span>82%</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function getTips(res, it) {
+  const tips = [];
+  const m = res.measurements;
+  const ratio = m.inseam / m.height;
+
+  if (res.bikeType === 'road') {
+    tips.push(it
+      ? `<strong>Altezza sella:</strong> Misura dal centro del movimento centrale al top della sella lungo il tubo sella. Il valore target è <strong>${res.saddleH} mm</strong>.`
+      : `<strong>Saddle height:</strong> Measure from the bottom bracket center to the top of the saddle along the seat tube. Target: <strong>${res.saddleH} mm</strong>.`);
+    tips.push(it
+      ? `<strong>Metodo LeMond:</strong> Altezza sella = cavallo × 0.883. Questo garantisce un angolo al ginocchio di circa 25-35° al punto morto inferiore.`
+      : `<strong>LeMond method:</strong> Saddle height = inseam × 0.883. This ensures a knee angle of ~25-35° at bottom dead center.`);
+  }
+
+  if (ratio < 0.46) {
+    tips.push(it
+      ? `<strong>Gambe corte:</strong> Considera pedivelle più corte (165-170 mm) per migliorare la fluidità della pedalata.`
+      : `<strong>Short legs:</strong> Consider shorter cranks (165-170 mm) to improve pedaling fluidity.`);
+  } else if (ratio > 0.52) {
+    tips.push(it
+      ? `<strong>Gambe lunghe:</strong> Pedivelle più lunghe (175-180 mm) possono aumentare la potenza. Verifica l'arretramento sella.`
+      : `<strong>Long legs:</strong> Longer cranks (175-180 mm) can increase power. Check saddle setback.`);
+  }
+
+  if (res.bikeType === 'city') {
+    tips.push(it
+      ? `<strong>Posizione eretta:</strong> Per la bici da città il manubrio dovrebbe essere alla stessa altezza o leggermente sopra la sella per una postura comoda.`
+      : `<strong>Upright position:</strong> For city bikes, the handlebar should be at the same height or slightly above the saddle for a comfortable posture.`);
+  }
+
+  if (res.bikeType === 'mtb') {
+    tips.push(it
+      ? `<strong>MTB:</strong> Abbassa leggermente la sella di 5-10 mm rispetto al valore calcolato per avere più mobilità in discesa.`
+      : `<strong>MTB:</strong> Lower the saddle slightly by 5-10 mm from the calculated value for more mobility on descents.`);
+  }
+
+  tips.push(it
+    ? `<strong>Regolazione fine:</strong> Questi valori sono un punto di partenza. Fai sempre una prova su strada e regola in base alle sensazioni. Un bike fitter professionista può ottimizzare ulteriormente.`
+    : `<strong>Fine tuning:</strong> These values are a starting point. Always do a road test and adjust based on feel. A professional bike fitter can further optimize.`);
+
+  return tips;
+}
+
+// ===== SIZE CHART =====
+function updateSizeChart(res) {
+  const it = currentLang === 'it';
+  const bikeType = res.bikeType;
+
+  const charts = {
+    road: [
+      {size:'XXS (44)', inseam:'≤75', stack:'490-510', reach:'360-375'},
+      {size:'XS (47)',  inseam:'75-79', stack:'510-530', reach:'370-385'},
+      {size:'S (50)',   inseam:'79-83', stack:'525-545', reach:'380-395'},
+      {size:'M (53)',   inseam:'83-87', stack:'540-560', reach:'390-405'},
+      {size:'L (56)',   inseam:'87-91', stack:'560-580', reach:'400-415'},
+      {size:'XL (58)',  inseam:'91-96', stack:'575-595', reach:'410-425'},
+      {size:'XXL (61)', inseam:'≥96',   stack:'590-615', reach:'420-440'},
+    ],
+    mtb: [
+      {size:'XS (13")', inseam:'≤72', stack:'560-580', reach:'400-420'},
+      {size:'S (15")',  inseam:'72-77', stack:'580-600', reach:'415-435'},
+      {size:'M (17")',  inseam:'77-82', stack:'600-620', reach:'430-450'},
+      {size:'L (19")',  inseam:'82-88', stack:'620-640', reach:'445-465'},
+      {size:'XL (21")', inseam:'88-94', stack:'640-660', reach:'460-480'},
+      {size:'XXL (23")',inseam:'≥94',   stack:'660-685', reach:'475-495'},
+    ],
+    city: [
+      {size:'XS (44)', inseam:'≤74', stack:'530-550', reach:'360-375'},
+      {size:'S (47)',  inseam:'74-79', stack:'550-570', reach:'370-385'},
+      {size:'M (50)',  inseam:'79-84', stack:'565-585', reach:'380-395'},
+      {size:'L (54)',  inseam:'84-89', stack:'580-600', reach:'390-405'},
+      {size:'XL (58)', inseam:'89-94', stack:'600-620', reach:'400-415'},
+      {size:'XXL (62)',inseam:'≥94',   stack:'620-645', reach:'410-430'},
+    ],
+    gravel: [
+      {size:'XS (46)', inseam:'≤76', stack:'500-520', reach:'365-380'},
+      {size:'S (49)',  inseam:'76-80', stack:'520-540', reach:'375-390'},
+      {size:'M (52)',  inseam:'80-84', stack:'535-555', reach:'385-400'},
+      {size:'L (55)',  inseam:'84-88', stack:'550-570', reach:'395-410'},
+      {size:'XL (58)', inseam:'88-93', stack:'565-585', reach:'405-420'},
+      {size:'XXL (61)',inseam:'≥93',   stack:'580-605', reach:'415-435'},
+    ]
+  };
+
+  const chart = charts[bikeType] || charts.road;
+  const recommended = res.frameLabel;
+
+  let html = `<div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+      <thead>
+        <tr style="background:var(--bg3);">
+          <th style="padding:8px 10px;text-align:left;color:var(--text2);font-weight:600;">${it?'Taglia':'Size'}</th>
+          <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:600;">${it?'Cavallo (cm)':'Inseam (cm)'}</th>
+          <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:600;">Stack (mm)</th>
+          <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:600;">Reach (mm)</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  chart.forEach(row => {
+    const isRec = row.size === recommended;
+    const bg = isRec ? 'background:rgba(255,107,0,0.12);' : '';
+    const border = isRec ? 'border-left:3px solid var(--orange);' : 'border-left:3px solid transparent;';
+    html += `<tr style="${bg}${border}border-bottom:1px solid var(--border);">
+      <td style="padding:9px 10px;font-weight:${isRec?'700':'400'};color:${isRec?'var(--orange)':'var(--text)'};">
+        ${row.size} ${isRec ? '← <span style="font-size:0.7rem;color:var(--orange);">'+(it?'TUA':'YOURS')+'</span>' : ''}
+      </td>
+      <td style="padding:9px 6px;text-align:center;color:var(--text2);">${row.inseam}</td>
+      <td style="padding:9px 6px;text-align:center;color:var(--text2);">${row.stack}</td>
+      <td style="padding:9px 6px;text-align:center;color:var(--text2);">${row.reach}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById('size-chart').innerHTML = html;
+}
+
+// ===== FRAME CHECK =====
+function checkFrame() {
+  if (!lastResult) {
+    showToast(currentLang==='it'?'⚠️ Calcola prima le misure nella tab Misure':'⚠️ Calculate measurements first in the Measures tab');
+    return;
+  }
+
+  const stack = +document.getElementById('inp-stack').value;
+  const reach = +document.getElementById('inp-reach').value;
+  const ett   = +document.getElementById('inp-ett').value;
+  const sta   = +document.getElementById('inp-sta').value;
+
+  if (!stack && !reach && !ett && !sta) {
+    showToast(currentLang==='it'?'⚠️ Inserisci almeno Stack e Reach':'⚠️ Enter at least Stack and Reach');
+    return;
+  }
+
+  const it = currentLang === 'it';
+  const res = lastResult;
+  let issues = [];
+  let score = 0;
+  let checks = 0;
+
+  if (stack) {
+    checks++;
+    const diff = stack - res.stackIdeal;
+    if (Math.abs(diff) <= 15) { score++; }
+    else if (Math.abs(diff) <= 30) {
+      issues.push(it
+        ? `Stack ${stack}mm: differenza di ${diff>0?'+':''}${diff}mm rispetto all'ideale (${res.stackIdeal}mm). Compensabile con reggisella e attacco manubrio.`
+        : `Stack ${stack}mm: ${diff>0?'+':''}${diff}mm from ideal (${res.stackIdeal}mm). Adjustable with seatpost and stem.`);
+    } else {
+      issues.push(it
+        ? `⚠️ Stack ${stack}mm: differenza di ${diff>0?'+':''}${diff}mm rispetto all'ideale (${res.stackIdeal}mm). Difficile da compensare.`
+        : `⚠️ Stack ${stack}mm: ${diff>0?'+':''}${diff}mm from ideal (${res.stackIdeal}mm). Hard to compensate.`);
+    }
+  }
+
+  if (reach) {
+    checks++;
+    const diff = reach - res.reachIdeal;
+    if (Math.abs(diff) <= 15) { score++; }
+    else if (Math.abs(diff) <= 25) {
+      issues.push(it
+        ? `Reach ${reach}mm: differenza di ${diff>0?'+':''}${diff}mm rispetto all'ideale (${res.reachIdeal}mm). Compensabile con attacco manubrio diverso.`
+        : `Reach ${reach}mm: ${diff>0?'+':''}${diff}mm from ideal (${res.reachIdeal}mm). Adjustable with different stem.`);
+    } else {
+      issues.push(it
+        ? `⚠️ Reach ${reach}mm: differenza di ${diff>0?'+':''}${diff}mm rispetto all'ideale (${res.reachIdeal}mm). Considera un telaio diverso.`
+        : `⚠️ Reach ${reach}mm: ${diff>0?'+':''}${diff}mm from ideal (${res.reachIdeal}mm). Consider a different frame.`);
+    }
+  }
+
+  if (ett) {
+    checks++;
+    const ettIdealCm = res.ettIdeal / 10;
+    const ettCm = ett / 10;
+    const diff = ettCm - ettIdealCm;
+    if (Math.abs(diff) <= 1.5) { score++; }
+    else {
+      issues.push(it
+        ? `ETT ${ett}mm: differenza di ${diff>0?'+':''}${diff.toFixed(1)}cm rispetto all'ideale (${res.ettIdeal}mm).`
+        : `ETT ${ett}mm: ${diff>0?'+':''}${diff.toFixed(1)}cm from ideal (${res.ettIdeal}mm).`);
+    }
+  }
+
+  if (sta) {
+    checks++;
+    const staIdeal = res.saddleH * 0.95;
+    const diff = sta - staIdeal;
+    if (Math.abs(diff) <= 20) { score++; }
+    else {
+      issues.push(it
+        ? `Tubo sella ${sta}mm: differenza di ${diff>0?'+':''}${Math.round(diff)}mm rispetto all'ideale (~${Math.round(staIdeal)}mm).`
+        : `Seat tube ${sta}mm: ${diff>0?'+':''}${Math.round(diff)}mm from ideal (~${Math.round(staIdeal)}mm).`);
+    }
+  }
+
+  const pct = checks > 0 ? score / checks : 0;
+  let verdict, cls, icon;
+  if (pct >= 0.75) {
+    verdict = it ? 'Telaio Compatibile' : 'Compatible Frame';
+    cls = 'ok'; icon = '✅';
+  } else if (pct >= 0.4) {
+    verdict = it ? 'Compatibile con Aggiustamenti' : 'Compatible with Adjustments';
+    cls = 'warn'; icon = '⚠️';
+  } else {
+    verdict = it ? 'Telaio Non Ideale' : 'Frame Not Ideal';
+    cls = 'bad'; icon = '❌';
+  }
+
+  let html = `<div class="frame-check-result ${cls}">
+    <div class="frame-check-icon">${icon}</div>
+    <div class="frame-check-title">${verdict}</div>
+    <div style="font-size:0.82rem;color:var(--text2);margin-top:4px;">
+      ${it?`${score}/${checks} parametri nella norma`:`${score}/${checks} parameters within range`}
+    </div>
+  </div>`;
+
+  if (issues.length > 0) {
+    html += `<p class="section-title">${it?'Dettagli':'Details'}</p>`;
+    issues.forEach(i => { html += `<div class="tip-card">${i}</div>`; });
+  } else if (checks > 0) {
+    html += `<div class="tip-card">${it?'<strong>Ottimo!</strong> Tutti i parametri del telaio sono nella norma per le tue misure.':'<strong>Great!</strong> All frame parameters are within range for your measurements.'}</div>`;
+  }
+
+  html += `<div class="tip-card" style="margin-top:12px;">
+    ${it
+      ? `<strong>Taglia consigliata per te:</strong> ${res.frameLabel} · Stack ideale: ${res.stackIdeal}mm · Reach ideale: ${res.reachIdeal}mm`
+      : `<strong>Recommended size for you:</strong> ${res.frameLabel} · Ideal stack: ${res.stackIdeal}mm · Ideal reach: ${res.reachIdeal}mm`}
+  </div>`;
+
+  const el = document.getElementById('frame-result');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.classList.remove('fade-in');
+  void el.offsetWidth;
+  el.classList.add('fade-in');
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  ['height','inseam','torso','arm','femur'].forEach(k => updateSlider(k));
+});
+</script>
+</body>
+</html>
